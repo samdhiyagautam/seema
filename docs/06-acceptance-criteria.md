@@ -74,6 +74,45 @@ reflect changes on next load.
 `npm run build` exits 0, zero TypeScript errors; `npm start` serves; sitemap/robots resolve;
 no runtime errors in console during the full T1–T11 pass.
 
+---
+
+# Phase 2 gate (Business Operations)
+
+## T13 — Calendar week/month + drag-reschedule re-runs conflicts
+1. `/admin/calendar` month view shows bookings, blocked days and the closed weekday.
+2. Drag a confirmed chip onto another day → toast "slot re-checked and free", list view shows the new date.
+3. Drag it onto a day that already has an overlapping booking → friendly `SLOT_TAKEN` toast; **no move happens** (RPC rejected it).
+4. Drag onto a blocked date → `DATE_BLOCKED` toast. Staff role: chips not draggable, no move UI.
+
+## T14 — Finance reconciles (P2.1 / P2.3)
+For the current month, compare the admin cards with SQL:
+
+```sql
+select * from finance_monthly where month = to_char(current_date, 'YYYY-MM');
+```
+
+- [ ] Recognized revenue = Σ net_total of completed bookings only (advances never counted)
+- [ ] Advance collections = Σ amount_paid on pending + confirmed bookings
+- [ ] Outstanding = Σ balance on confirmed + completed
+- [ ] Profit = recognized revenue − expenses; matches after adding an expense in `/admin/finance`
+- [ ] Deleting an expense updates profit within one reload
+
+## T15 — Course → registration → fee ledger end-to-end (P2.4)
+1. Public `/courses/[slug]` → submit enquiry → appears in `/admin/students` as `new`.
+2. Register → choose batch + fee + discount → student created (upsert by phone), enrollment created, enquiry flips `converted`.
+3. Record a partial payment → ledger row appears, paid total and "due" update (DB trigger re-summed).
+4. Record more than the balance → rejected with the due amount shown. Delete a ledger row → re-summed.
+5. Enrollment balance contributes nothing to booking revenue (separate ledger).
+
+## T16 — Notifications digest
+`/admin/reminders` lists tomorrow's confirmed bookings with prefilled WhatsApp messages (studio address + time), today's pending bookings, and leads whose follow-up date has arrived. "Copy digest" puts a plain-text digest on the clipboard. No external API keys required.
+
+## T17 — Analytics comparison + CSV export (P2.5)
+- [ ] `/admin/analytics` shows this month vs last month (bookings, revenue, avg value, profit) with % deltas
+- [ ] Export links download: funnel CSV (events), finance CSV (12 months), customers CSV (LTV + segments)
+- [ ] CSV numbers match `/admin/finance` cards and hand-written SQL for the same period
+- [ ] `/admin/analytics/export` returns 401 signed-out and 403 for roles without the capability
+
 ## Release checklist (beyond tests)
 - [ ] Supabase: migrations applied; first admin created with `super_admin`; MFA recommended
 - [ ] `.env` secrets set on host (Vercel/custom); anon key only public value

@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { mergeContent, type SiteContent } from "@/lib/site";
 import type {
+  Batch,
   BlockedDate,
+  Course,
   PortfolioItem,
   Review,
   Service,
@@ -110,5 +112,53 @@ export async function getActiveStaff(): Promise<StaffMember[]> {
       .order("display_order");
     if (error) throw error;
     return (data ?? []) as StaffMember[];
+  }, []);
+}
+
+/* ------------------------------------------------------------ Phase 2 ---- */
+
+export async function getActiveCourses(): Promise<Course[]> {
+  return safe(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order")
+      .order("name");
+    if (error) throw error;
+    return (data ?? []) as Course[];
+  }, []);
+}
+
+export async function getCourseBySlug(slug: string): Promise<Course | null> {
+  return safe(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (error) throw error;
+    return (data as Course) ?? null;
+  }, null);
+}
+
+/** Batches open for enquiry: upcoming or ongoing, soonest first. */
+export async function getOpenBatches(courseId?: string): Promise<Batch[]> {
+  return safe(async () => {
+    const supabase = await createClient();
+    let q = supabase
+      .from("batches")
+      .select("*")
+      .in("status", ["upcoming", "ongoing"])
+      .gte("start_date", new Date().toISOString().slice(0, 10))
+      .order("start_date")
+      .limit(20);
+    if (courseId) q = q.eq("course_id", courseId);
+    const { data, error } = await q;
+    if (error) throw error;
+    return (data ?? []) as Batch[];
   }, []);
 }

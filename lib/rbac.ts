@@ -18,6 +18,8 @@ export const CAPABILITIES = [
   "reviews.moderate",
   "content.manage",
   "finance.view",
+  "finance.manage",
+  "courses.manage",
   "analytics.view",
   "users.manage",
 ] as const;

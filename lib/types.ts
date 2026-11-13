@@ -128,3 +128,122 @@ export type AnalyticsEventName =
   | "enquiry_submitted"
   | "whatsapp_cta_clicked"
   | "course_enquiry_submitted";
+
+/* ------------------------------------------------------------ Phase 2 ---- */
+
+export type EnrollmentStatus = "active" | "completed" | "dropped";
+export type BatchStatus = "upcoming" | "ongoing" | "completed";
+export type FeeMethod = "upi" | "cash" | "bank" | "other";
+
+export type Course = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  summary: string | null;
+  description: string | null;
+  syllabus: string | null;
+  duration_days: number;
+  fee_inr: number;
+  kit_included: boolean;
+  image_url: string | null;
+  is_active: boolean;
+  display_order: number;
+};
+
+export type Batch = {
+  id: string;
+  course_id: string;
+  name: string;
+  start_date: string;
+  end_date: string | null;
+  schedule: string | null;
+  capacity: number;
+  status: BatchStatus;
+};
+
+export type Student = {
+  id: string;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  source: SourceChannel;
+  notes: string | null;
+  joined_on: string;
+  created_at: string;
+};
+
+export type Enrollment = {
+  id: string;
+  student_id: string;
+  course_id: string;
+  batch_id: string | null;
+  course_name: string;
+  fee_inr: number;
+  discount_amount: number;
+  amount_paid: number;
+  status: EnrollmentStatus;
+  admin_notes: string | null;
+  created_at: string;
+  student?: { full_name: string; phone: string } | null;
+};
+
+export type FeePayment = {
+  id: string;
+  enrollment_id: string;
+  paid_on: string;
+  amount_inr: number;
+  method: FeeMethod;
+  note: string | null;
+  created_at: string;
+};
+
+export type CourseEnquiry = {
+  id: string;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  course_id: string | null;
+  course_name: string | null;
+  message: string | null;
+  status: LeadStatus;
+  converted_enrollment_id: string | null;
+  admin_notes: string | null;
+  created_at: string;
+};
+
+export type Expense = {
+  id: string;
+  spent_on: string;
+  category: string;
+  description: string | null;
+  amount_inr: number;
+  created_by: string | null;
+  created_at: string;
+};
+
+/** Row of the `finance_monthly` SQL view (docs/02 §4 math). */
+export type FinanceMonth = {
+  month: string; // "YYYY-MM"
+  recognized_revenue: number;
+  completed_bookings: number;
+  advance_collections: number;
+  outstanding: number;
+  refunds: number;
+  expenses: number;
+  estimated_profit: number;
+  avg_booking_value: number;
+  completion_rate_pct: number;
+};
+
+/** Row of the `customer_stats` SQL view. */
+export type CustomerStats = {
+  id: string;
+  full_name: string;
+  phone: string;
+  total_bookings: number;
+  visits: number;
+  lifetime_value: number;
+  outstanding: number;
+  last_completed_on: string | null;
+};

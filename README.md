@@ -17,6 +17,8 @@ roadmap and the QA plan that gates production (`docs/06-acceptance-criteria.md`)
 1. Create a project at [supabase.com](https://supabase.com).
 2. SQL Editor → paste the entire contents of `supabase/migrations/0001_init.sql` → Run.
    This creates enums, tables, indexes, RLS policies, storage bucket, scheduling RPCs and seed data.
+3. SQL Editor → paste `supabase/migrations/0002_phase2.sql` → Run (Phase 2: courses, students,
+   fee ledger, course enquiries + the `finance_monthly` / `customer_stats` verification views).
 
 ## 2. Create the first admin
 
@@ -58,7 +60,23 @@ npm run dev
 4. `/admin/availability` — block upcoming holidays.
 5. Change the seeded placeholder data anywhere it appears.
 
-## 5. How booking conflicts work (summary)
+## 5. Phase 2 — Business Operations (new)
+
+| Area | Where |
+|---|---|
+| Week/month calendar with drag-reschedule (slot re-checked server-side) | `/admin/calendar` |
+| Finance: recognized revenue, advances, outstanding, refunds, expenses, profit (12-month table + CSV) | `/admin/finance` |
+| Course catalogue + batches (published to `/courses` on the site) | `/admin/courses` |
+| Students: enquiry → registration → batch → installment fee ledger | `/admin/students` |
+| WhatsApp reminder digests (tomorrow's appointments, today's to-confirm, follow-ups due) | `/admin/reminders` |
+| Analytics with this-month vs last-month comparison, channel mix, CSV exports | `/admin/analytics` |
+| Customer CRM segments (VIP ≥ ₹25k or 3 visits · Lapsed 90+ days · Regular · New) + CSV | `/admin/customers` |
+| Public academy pages + course enquiry form | `/courses`, `/courses/[slug]` |
+
+Verify the money math in SQL: `select * from finance_monthly;` — the admin cards read the same
+view (defined in `supabase/migrations/0002_phase2.sql`, spec in `docs/02-data-model.md` §4).
+
+## 6. How booking conflicts work (summary)
 
 `create_booking()` / `reschedule_booking()` RPCs validate — atomically, in the database — that
 the slot is: inside `open_time`–`close_time`, on an open weekday, not a `blocked_date`, respecting
@@ -66,7 +84,7 @@ the slot is: inside `open_time`–`close_time`, on an open weekday, not a `block
 (duration-aware). Rejections surface as human messages on the booking form.
 Details: `docs/02-data-model.md` §5.
 
-## 6. Scripts
+## 7. Scripts
 
 | Command | Purpose |
 |---|---|
@@ -75,7 +93,7 @@ Details: `docs/02-data-model.md` §5.
 | `npm start` | Serve the production build |
 | `npm run typecheck` | TypeScript only |
 
-## 7. Deploy (Vercel or any Node host)
+## 8. Deploy (Vercel or any Node host)
 
 - Set env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
   `NEXT_PUBLIC_SITE_URL`. Keep `SUPABASE_SERVICE_ROLE_KEY` server-only or unset — the app doesn't
@@ -83,14 +101,14 @@ Details: `docs/02-data-model.md` §5.
 - Add your production URL to Supabase → Auth → URL configuration.
 - Run `npm run build` locally first — green build is acceptance criterion T12.
 
-## 8. Security notes
+## 9. Security notes
 
 - All public writes go through validated forms and SECURITY DEFINER RPCs — the anon key can
   never read bookings/customers/leads or write bookings directly (verify with `docs/06` T10).
 - Row-level security mirrors the permission matrix; admin server actions re-check roles.
 - Analytics is first-party and PII-free (`events` table, no cookies).
 
-## 9. Docs map
+## 10. Docs map
 
 | Doc | Contents |
 |---|---|

@@ -29,8 +29,8 @@ export function StatCard({
   href,
 }: {
   label: string;
-  value: string | number;
-  sub?: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
   href?: string;
 }) {
   const body = (

@@ -110,3 +110,104 @@ export function timeToMinutes(t: string) {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + (m || 0);
 }
+
+/* ------------------------------------------------------------ Phase 2 ---- */
+
+export const ENROLLMENT_STATUS_META: Record<string, { label: string; className: string }> = {
+  active: { label: "Active", className: "bg-brand-100 text-brand-700" },
+  completed: { label: "Passed out", className: "bg-emerald-100 text-emerald-800" },
+  dropped: { label: "Dropped", className: "bg-ink-100 text-ink-500" },
+};
+
+export const BATCH_STATUS_META: Record<string, { label: string; className: string }> = {
+  upcoming: { label: "Upcoming", className: "bg-amber-100 text-amber-800" },
+  ongoing: { label: "Ongoing", className: "bg-sky-100 text-sky-800" },
+  completed: { label: "Completed", className: "bg-ink-100 text-ink-500" },
+};
+
+export const FEE_METHOD_LABELS: Record<string, string> = {
+  upi: "UPI",
+  cash: "Cash",
+  bank: "Bank transfer",
+  other: "Other",
+};
+
+export const EXPENSE_CATEGORIES = [
+  "Products & kit",
+  "Rent",
+  "Salaries",
+  "Marketing",
+  "Utilities",
+  "Equipment",
+  "Travel",
+  "Other",
+] as const;
+
+/** Net course fee after discount (mirrors bookings' netTotal). */
+export function enrollmentBalance(e: { fee_inr: number; discount_amount: number; amount_paid: number }) {
+  return Math.max(0, e.fee_inr - e.discount_amount - e.amount_paid);
+}
+
+/**
+ * CRM segment rules (Phase 2): how the owner thinks about her customers.
+ * vip     — ≥ ₹25,000 lifetime spend OR ≥ 3 completed visits
+ * lapsed  — visited before, but last completed visit is 90+ days old
+ * regular — visited before, still warm
+ * new     — no completed visit yet
+ */
+export const VIP_SPEND_INR = 25000;
+export const VIP_VISITS = 3;
+export const LAPSED_DAYS = 90;
+
+export function customerSegment(c: {
+  visits: number;
+  lifetime_value: number;
+  last_completed_on: string | null;
+}): "vip" | "lapsed" | "regular" | "new" {
+  if (c.visits === 0) return "new";
+  if (c.lifetime_value >= VIP_SPEND_INR || c.visits >= VIP_VISITS) return "vip";
+  if (c.last_completed_on) {
+    const last = new Date(`${c.last_completed_on}T00:00:00`).getTime();
+    if (Date.now() - last > LAPSED_DAYS * 86400000) return "lapsed";
+  }
+  return "regular";
+}
+
+export const SEGMENT_META: Record<string, { label: string; className: string }> = {
+  vip: { label: "VIP", className: "bg-violet-100 text-violet-700" },
+  lapsed: { label: "Lapsed", className: "bg-amber-100 text-amber-800" },
+  regular: { label: "Regular", className: "bg-sky-100 text-sky-800" },
+  new: { label: "New", className: "bg-brand-100 text-brand-700" },
+};
+
+/** "YYYY-MM" for a YYYY-MM-DD string. */
+export function monthKey(isoDate: string) {
+  return isoDate.slice(0, 7);
+}
+
+export function monthLabel(ym: string) {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+}
+
+export function shiftMonth(ym: string, delta: number) {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Escape a value for CSV export. */
+export function csvCell(v: unknown) {
+  const s = v === null || v === undefined ? "" : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+export function csvResponse(filename: string, rows: unknown[][]) {
+  const body = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+  return new Response("\uFEFF" + body, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  });
+}

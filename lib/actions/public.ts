@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   bookingInputSchema,
+  courseEnquiryInputSchema,
   enquiryInputSchema,
   reviewInputSchema,
   friendlyError,
@@ -99,5 +100,29 @@ export async function submitReviewAction(input: unknown): Promise<ActionResult> 
   });
 
   if (error) return { ok: false, error: friendlyError(error.message) };
+  return { ok: true };
+}
+
+/** Public course enquiry (academy form). */
+export async function submitCourseEnquiryAction(input: unknown): Promise<ActionResult> {
+  const parsed = courseEnquiryInputSchema.safeParse(input);
+  const issue = firstIssue(parsed);
+  if (issue || !parsed.success) return { ok: false, error: issue ?? "Invalid enquiry details." };
+
+  const { name, phone, email, courseId, courseName, message } = parsed.data;
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("course_enquiries").insert({
+    full_name: name,
+    phone,
+    email: email || null,
+    course_id: courseId || null,
+    course_name: courseName || null,
+    message: message || null,
+  });
+
+  if (error) return { ok: false, error: friendlyError(error.message) };
+
+  await logEvent("course_enquiry_submitted", "/courses", { course: courseId || "general" });
   return { ok: true };
 }

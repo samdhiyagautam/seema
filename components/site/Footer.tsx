@@ -65,6 +65,7 @@ export default function Footer({ content }: { content: SiteContent }) {
           <p className="text-sm font-semibold text-ink-800">Quick links</p>
           <ul className="mt-3 space-y-2 text-sm text-ink-500">
             <li><Link href="/services" className="hover:text-brand-700">Services &amp; pricing</Link></li>
+            <li><Link href="/courses" className="hover:text-brand-700">Makeup courses</Link></li>
             <li><Link href="/portfolio" className="hover:text-brand-700">Portfolio</Link></li>
             <li><Link href="/reviews" className="hover:text-brand-700">Customer reviews</Link></li>
             <li><Link href="/book" className="hover:text-brand-700">Book an appointment</Link></li>

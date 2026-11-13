@@ -8,6 +8,8 @@ import CustomerNotes from "@/components/admin/CustomerNotes";
 import {
   BOOKING_STATUS_META,
   PAYMENT_STATUS_META,
+  SEGMENT_META,
+  customerSegment,
   formatDate,
   formatINR,
   formatTime,
@@ -47,6 +49,13 @@ export default async function CustomerProfilePage({
   const visits = completed.length;
   const spend = completed.reduce((s, b) => s + netTotal(b), 0);
   const lastVisit = c.last_visit_at;
+  const segMeta = SEGMENT_META[
+    customerSegment({
+      visits,
+      lifetime_value: spend,
+      last_completed_on: lastVisit?.slice(0, 10) ?? null,
+    })
+  ];
   const preferred =
     Object.entries(
       bookings.reduce<Record<string, number>>((acc, b) => {
@@ -67,14 +76,17 @@ export default async function CustomerProfilePage({
         title={c.full_name}
         description={`${c.phone}${c.email ? ` · ${c.email}` : ""}${c.source ? ` · via ${c.source}` : ""}`}
         actions={
-          <a
-            href={waLink(c.phone, `Hi ${c.full_name}! This is Seema Makeover Studio.`)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-outline btn-sm"
-          >
-            WhatsApp
-          </a>
+          <>
+            <span className={`badge mr-1 ${segMeta.className}`}>{segMeta.label}</span>
+            <a
+              href={waLink(c.phone, `Hi ${c.full_name}! This is Seema Makeover Studio.`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline btn-sm"
+            >
+              WhatsApp
+            </a>
+          </>
         }
       />
 
